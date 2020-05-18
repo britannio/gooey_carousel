@@ -6,13 +6,16 @@ import 'gooey_edge.dart';
 import 'gooey_edge_clipper.dart';
 
 class GooeyCarousel extends StatefulWidget {
-  final List<Widget> children;
-  final void Function(int index) onIndexUpdate;
-
   GooeyCarousel({
+    Key key,
     @required this.children,
     this.onIndexUpdate,
-  }) : super();
+    this.loop = false,
+  }) : super(key: key);
+
+  final List<Widget> children;
+  final void Function(int index) onIndexUpdate;
+  final bool loop;
 
   @override
   GooeyCarouselState createState() => GooeyCarouselState();
@@ -57,29 +60,6 @@ class GooeyCarouselState extends State<GooeyCarousel>
     setState(() {});
   }
 
-  @override
-  Widget build(BuildContext context) {
-    int l = widget.children.length;
-
-    return GestureDetector(
-        key: _key,
-        onPanDown: (details) => _handlePanDown(details, _getSize()),
-        onPanUpdate: (details) => _handlePanUpdate(details, _getSize()),
-        onPanEnd: (details) => _handlePanEnd(details, _getSize()),
-        child: Stack(
-          children: <Widget>[
-            widget.children[_index % l],
-            _dragIndex == null
-                ? SizedBox()
-                : ClipPath(
-                    child: widget.children[_dragIndex % l],
-                    clipBehavior: Clip.hardEdge,
-                    clipper: GooeyEdgeClipper(_edge, margin: 10.0),
-                  ),
-          ],
-        ));
-  }
-
   Size _getSize() {
     final RenderBox box = _key.currentContext.findRenderObject();
     return box.size;
@@ -115,7 +95,24 @@ class GooeyCarouselState extends State<GooeyCarousel>
     _edge.applyTouchOffset(Offset(dx, details.localPosition.dy), size);
   }
 
+  void _handlePanEnd(DragEndDetails details, Size size) {
+    _edge.applyTouchOffset();
+  }
+
   bool _isSwipeActive(double dx) {
+    // Veto swiping if going in a loop is disabled
+    if (!widget.loop) {
+      final bool goingBackwards = dx > 0;
+      final bool goingForwards = dx < 0;
+
+      final bool onFirstPage = _index == 0;
+      final bool onLastPage = _index + 1 == widget.children.length;
+      // Attempting to swipe right on the first page
+      if (goingBackwards && onFirstPage) return false;
+      // Attempting to swipe left on the last page
+      if (goingForwards && onLastPage) return false;
+    }
+
     // check if a swipe is just starting:
     if (_dragDirection == 0.0 && dx.abs() > 20.0) {
       _dragDirection = dx.sign;
@@ -151,7 +148,27 @@ class GooeyCarouselState extends State<GooeyCarousel>
     return dragCompleted;
   }
 
-  void _handlePanEnd(DragEndDetails details, Size size) {
-    _edge.applyTouchOffset();
+  @override
+  Widget build(BuildContext context) {
+    int length = widget.children.length;
+
+    return GestureDetector(
+      key: _key,
+      onPanDown: (details) => _handlePanDown(details, _getSize()),
+      onPanUpdate: (details) => _handlePanUpdate(details, _getSize()),
+      onPanEnd: (details) => _handlePanEnd(details, _getSize()),
+      child: Stack(
+        children: <Widget>[
+          widget.children[_index % length],
+          _dragIndex == null
+              ? SizedBox()
+              : ClipPath(
+                  child: widget.children[_dragIndex % length],
+                  clipBehavior: Clip.antiAlias,
+                  clipper: GooeyEdgeClipper(_edge, margin: 10.0),
+                ),
+        ],
+      ),
+    );
   }
 }
