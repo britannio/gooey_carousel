@@ -4,21 +4,31 @@ import 'package:flutter/material.dart';
 import 'side.dart';
 
 class GooeyEdge {
-  List<_GooeyPoint> points;
+  final List<_GooeyPoint> points = [];
+  final double touchTension;
+  final double pointTension;
+  final double damping;
+  final double maxTouchDistance;
   Side side;
-  double edgeTension = 0.01;
-  double farEdgeTension = 0.0;
-  double touchTension = 0.1;
-  double pointTension = 0.25;
-  double damping = 0.9;
-  double maxTouchDistance = 0.15;
+  double edgeTension;
+  double farEdgeTension;
   int lastT = 0;
 
   FractionalOffset touchOffset;
 
-  GooeyEdge({count = 10, this.side = Side.left}) {
-    points = [];
+  GooeyEdge({
+    count = 10,
+    this.side = Side.left,
+    this.edgeTension = 0.01,
+    this.farEdgeTension = 0.0,
+    this.touchTension = 0.1,
+    this.pointTension = 0.25,
+    this.damping = 0.9,
+    this.maxTouchDistance = 0.15,
+    this.lastT = 0,
+  }) {
     for (int i = 0; i < count; i++) {
+      /// initialises [points] with the specified amount of [_GooeyPoint]
       points.add(_GooeyPoint(0.0, i / (count - 1)));
     }
   }
@@ -45,7 +55,7 @@ class GooeyEdge {
   }
 
   Path buildPath(Size size, {double margin = 0.0}) {
-    if (points == null || points.length == 0) {
+    if (points?.isEmpty ?? true) {
       return null;
     }
 
@@ -80,15 +90,15 @@ class GooeyEdge {
   }
 
   void tick(Duration duration) {
-    if (points == null || points.length == 0) {
+    if (points == null || points.isEmpty) {
       return;
     }
-    int l = points.length;
+    int length = points.length;
     double t = min(1.5, (duration.inMilliseconds - lastT) / 1000 * 60);
     lastT = duration.inMilliseconds;
     double dampingT = pow(damping, t);
 
-    for (int i = 0; i < l; i++) {
+    for (int i = 0; i < length; i++) {
       _GooeyPoint pt = points[i];
       pt.velX -= pt.x * edgeTension * t;
       pt.velX += (1.0 - pt.x) * farEdgeTension * t;
@@ -100,13 +110,13 @@ class GooeyEdge {
       if (i > 0) {
         _addPointTension(pt, points[i - 1].x, t);
       }
-      if (i < l - 1) {
+      if (i < length - 1) {
         _addPointTension(pt, points[i + 1].x, t);
       }
       pt.velX *= dampingT;
     }
 
-    for (int i = 0; i < l; i++) {
+    for (int i = 0; i < length; i++) {
       _GooeyPoint pt = points[i];
       pt.x += pt.velX * t;
     }
