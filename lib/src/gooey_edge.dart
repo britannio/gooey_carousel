@@ -17,7 +17,7 @@ class GooeyEdge {
   FractionalOffset touchOffset;
 
   GooeyEdge({
-    count = 10,
+    int count = 10,
     this.side = Side.left,
     this.edgeTension = 0.01,
     this.farEdgeTension = 0.0,

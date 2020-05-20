@@ -40,13 +40,13 @@ class GooeyCarouselState extends State<GooeyCarousel>
 
   GooeyEdge _edge;
   Ticker _ticker;
-  GlobalKey _key = GlobalKey();
+  final GlobalKey _key = GlobalKey();
 
   @override
   void initState() {
+    super.initState();
     _edge = GooeyEdge(count: 25);
     _ticker = createTicker(_tick)..start();
-    super.initState();
   }
 
   @override
@@ -66,6 +66,15 @@ class GooeyCarouselState extends State<GooeyCarousel>
   }
 
   void _handlePanDown(DragDownDetails details, Size size) {
+    // print('--- _handlePanDown ---');
+    /*  print('_index: $_index');
+    print('_dragIndex: $_dragIndex');
+    print('_dragOffset: $_dragOffset');
+    print('dragCompleted: $dragCompleted');
+    print('_dragDirection: $_dragDirection');
+    print('_edge.farEdgeTension: ${_edge.farEdgeTension}');
+    print('_edge.edgeTension: ${_edge.edgeTension}'); */
+
     if (_dragIndex != null && dragCompleted) {
       _index = _dragIndex;
     }
@@ -77,6 +86,14 @@ class GooeyCarouselState extends State<GooeyCarousel>
     _edge.farEdgeTension = 0.0;
     _edge.edgeTension = 0.01;
     _edge.reset();
+    /* print('--- after ---');
+    print('_index: $_index');
+    print('_dragIndex: $_dragIndex');
+    print('_dragOffset: $_dragOffset');
+    print('dragCompleted: $dragCompleted');
+    print('_dragDirection: $_dragDirection');
+    print('_edge.farEdgeTension: ${_edge.farEdgeTension}');
+    print('_edge.edgeTension: ${_edge.edgeTension}'); */
   }
 
   void _handlePanUpdate(DragUpdateDetails details, Size size) {
@@ -125,6 +142,7 @@ class GooeyCarouselState extends State<GooeyCarousel>
   }
 
   bool _isSwipeComplete(double dx, double width) {
+    // print('_isSwipeComplete');
     if (_dragDirection == 0.0) {
       return false;
     } // haven't started
@@ -138,19 +156,25 @@ class GooeyCarouselState extends State<GooeyCarousel>
       availW = width - availW;
     }
     double ratio = dx * _dragDirection / availW;
+    // print('ratio: $ratio | widthRatio: ${availW / width}');
 
-    if (ratio > 0.8 && availW / width > 0.5) {
+    // * ratio is useful
+    if ((ratio > 0.45 && availW / width > 0.4) ||
+        (ratio > 0.35 && availW / width > 0.95)) {
       dragCompleted = true;
       _edge.farEdgeTension = 0.01;
       _edge.edgeTension = 0.0;
       _edge.applyTouchOffset();
+      /* if (_dragIndex != null && dragCompleted) {
+        _index = _dragIndex;
+      } */
     }
     return dragCompleted;
   }
 
   @override
   Widget build(BuildContext context) {
-    int length = widget.children.length;
+    final int length = widget.children.length;
 
     return GestureDetector(
       key: _key,
@@ -160,13 +184,12 @@ class GooeyCarouselState extends State<GooeyCarousel>
       child: Stack(
         children: <Widget>[
           widget.children[_index % length],
-          _dragIndex == null
-              ? SizedBox()
-              : ClipPath(
-                  child: widget.children[_dragIndex % length],
-                  clipBehavior: Clip.antiAlias,
-                  clipper: GooeyEdgeClipper(_edge, margin: 10.0),
-                ),
+          if (_dragIndex != null)
+            ClipPath(
+              child: widget.children[_dragIndex % length],
+              clipBehavior: Clip.antiAlias,
+              clipper: GooeyEdgeClipper(_edge, margin: 10.0),
+            )
         ],
       ),
     );

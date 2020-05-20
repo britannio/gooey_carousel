@@ -8,12 +8,9 @@ class GooeyEdgeClipper extends CustomClipper<Path> {
   GooeyEdgeClipper(this.edge, {this.margin = 0.0}) : super();
 
   @override
-  Path getClip(Size size) {
-    return edge.buildPath(size, margin: margin);
-  }
+  Path getClip(Size size) => edge.buildPath(size, margin: margin);
 
+  // TODO: optimize?
   @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) {
-    return true; // TODO: optimize?
-  }
+  bool shouldReclip(CustomClipper<Path> oldClipper) => true;
 }
